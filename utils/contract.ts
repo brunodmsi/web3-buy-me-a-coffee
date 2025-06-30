@@ -1,66 +1,86 @@
 // This file will read the contract data from the deployed contract
 // You'll need to update this with your actual deployed contract address and ABI
 
-export function getContract() {
-  // Use the deployed contract address directly
-  // Note: In Next.js, we can't read files on client-side, so we hardcode the values
-  const CONTRACT_ADDRESS = "0x51F005313F7d84fA14C5B7907e71836884a10bBB" // Deployed to Ganache
-  
-  // Simplified ABI format for better wagmi compatibility
-  const CONTRACT_ABI = [
-    {
-      "type": "constructor",
-      "inputs": []
-    },
-    {
-      "type": "event",
-      "name": "NewMemo",
-      "inputs": [
-        {"name": "from", "type": "address", "indexed": true},
-        {"name": "timestamp", "type": "uint256", "indexed": false},
-        {"name": "name", "type": "string", "indexed": false},
-        {"name": "message", "type": "string", "indexed": false}
-      ]
-    },
-    {
-      "type": "function",
-      "name": "buyCoffee",
-      "stateMutability": "payable",
-      "inputs": [
-        {"name": "_name", "type": "string"},
-        {"name": "_message", "type": "string"}
-      ],
-      "outputs": []
-    },
-    {
-      "type": "function",
-      "name": "getMemos",
-      "stateMutability": "view",
-      "inputs": [],
-      "outputs": [
-        {
-          "name": "",
-          "type": "tuple[]",
-          "components": [
-            {"name": "from", "type": "address"},
-            {"name": "timestamp", "type": "uint256"},
-            {"name": "name", "type": "string"},
-            {"name": "message", "type": "string"}
-          ]
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "withdrawTips",
-      "stateMutability": "nonpayable",
-      "inputs": [],
-      "outputs": []
-    }
-  ] as const
+import contractData from '../contract-data.json';
 
-  return {
-    address: CONTRACT_ADDRESS,
-    abi: CONTRACT_ABI
+// Cache the contract data
+let cachedContractData = contractData;
+
+// Ensure ABI is in the correct format
+function ensureAbiFormat(abi: any) {
+  if (typeof abi === 'string') {
+    return JSON.parse(abi);
   }
+  return abi;
+}
+
+// Export the current contract data
+export const CONTRACT_ADDRESS = cachedContractData.address as `0x${string}`;
+export const CONTRACT_ABI = ensureAbiFormat(cachedContractData.abi);
+
+// Function to manually refresh contract data (for development)
+export async function refreshContractData() {
+  try {
+    // For browser environments, fetch the updated file
+    if (typeof window !== 'undefined') {
+      const response = await fetch('/contract-data.json?' + Date.now());
+      const newData = await response.json();
+      
+      cachedContractData = newData;
+      
+      console.log('✅ Contract data refreshed:', {
+        address: newData.address,
+        deploymentBlock: newData.deploymentBlock
+      });
+      
+      return {
+        address: newData.address as `0x${string}`,
+        abi: ensureAbiFormat(newData.abi),
+        deploymentBlock: newData.deploymentBlock
+      };
+    }
+    
+    return getContractData();
+  } catch (error) {
+    console.error('❌ Failed to refresh contract data:', error);
+    throw error;
+  }
+}
+
+// Function to get current contract data
+export function getContractData() {
+  return {
+    address: cachedContractData.address as `0x${string}`,
+    abi: ensureAbiFormat(cachedContractData.abi),
+    deploymentBlock: cachedContractData.deploymentBlock
+  };
+}
+
+// Check if contract data might be stale (for development warning)
+export async function checkContractDataFreshness() {
+  try {
+    if (typeof window === 'undefined') return true; // Skip on server
+    
+    const response = await fetch('/contract-data.json?' + Date.now());
+    const currentData = await response.json();
+    
+    const isStale = cachedContractData.address !== currentData.address;
+    
+    if (isStale) {
+      console.warn('⚠️ Contract data may be stale. Current:', cachedContractData.address, 'Latest:', currentData.address);
+    }
+    
+    return !isStale;
+  } catch (error) {
+    console.warn('Could not check contract data freshness:', error);
+    return true; // Assume it's fine if we can't check
+  }
+}
+
+// Main function to get contract info (updated to use dynamic data)
+export function getContract() {
+  return {
+    address: cachedContractData.address as `0x${string}`,
+    abi: ensureAbiFormat(cachedContractData.abi)
+  };
 } 

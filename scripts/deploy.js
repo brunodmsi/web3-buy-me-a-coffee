@@ -23,11 +23,22 @@ async function main() {
   const fs = require('fs');
   const contractData = {
     address: contractAddress,
-    abi: JSON.stringify(BuyMeACoffee.interface.fragments)
+    abi: JSON.parse(BuyMeACoffee.interface.formatJson()),
+    deploymentBlock: (await buyMeACoffee.deploymentTransaction()?.getBlock())?.number
   };
   
-  fs.writeFileSync('./contract-data.json', JSON.stringify(contractData, null, 2));
-  console.log("Contract data saved to contract-data.json");
+  const contractDataJson = JSON.stringify(contractData, null, 2);
+  
+  // Save to project root for backend
+  fs.writeFileSync('./contract-data.json', contractDataJson);
+  
+  // Save to public folder for frontend DevTools
+  if (!fs.existsSync('./public')) {
+    fs.mkdirSync('./public');
+  }
+  fs.writeFileSync('./public/contract-data.json', contractDataJson);
+  
+  console.log("Contract data saved to contract-data.json and public/contract-data.json");
 }
 
 main()
