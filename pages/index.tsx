@@ -6,6 +6,7 @@ import BuyCoffeeForm from '../components/BuyCoffeeForm'
 import MemosList from '../components/MemosList'
 import WalletConnection from '../components/WalletConnection'
 import Alert from '../components/Alert'
+import DevTools from '../components/DevTools'
 
 export default function Home() {
   const [memos, setMemos] = useState<any[]>([])
@@ -92,6 +93,9 @@ export default function Home() {
       <footer className="text-center py-8 text-gray-600">
         <p>Made with ❤️ and ☕ using Next.js and Ethereum</p>
       </footer>
+
+      {/* Development Tools - Only shows in development mode */}
+      <DevTools />
     </div>
   )
 } 
